@@ -1,6 +1,7 @@
 import pino from "pino";
+import { env } from "./env.js";
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = env.NODE_ENV === "development";
 
 export const logger = pino({
   transport: isDevelopment
