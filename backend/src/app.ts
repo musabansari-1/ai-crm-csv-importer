@@ -6,6 +6,9 @@ import { pinoHttp } from "pino-http";
 import { logger } from "./config/logger.js";
 import { env } from "./config/env.js";
 
+import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
+
 const app = express();
 
 app.use(helmet());
@@ -30,5 +33,8 @@ app.get("/api/v1/health", (_req, res) => {
     status: "ok",
   });
 });
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 export default app;
