@@ -1,17 +1,23 @@
 import { ApiError } from "../../utils/ApiError.js";
+import { csvParserService } from "../../services/csv-parser.service.js";
 
-export const importCsv = async (file?: Express.Multer.File) => {
-  if (!file) {
-    throw new ApiError(400, "CSV file is required.");
+class ImportService {
+  async importCsv(file?: Express.Multer.File) {
+    if (!file) {
+      throw new ApiError(400, "CSV file is required.");
+    }
+
+    if (file.size === 0) {
+      throw new ApiError(400, "Uploaded CSV file is empty.");
+    }
+
+    const records = await csvParserService.parse(file);
+
+    return {
+      totalRecords: records.length,
+      records,
+    };
   }
+}
 
-  if (file.size === 0) {
-    throw new ApiError(400, "Uploaded CSV file is empty.");
-  }
-
-  return {
-    fileName: file.originalname,
-    fileSize: file.size,
-    message: "CSV uploaded successfully.",
-  };
-};
+export const importService = new ImportService();
