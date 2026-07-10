@@ -9,6 +9,9 @@ import { env } from "./config/env.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 
+import importRoutes from "./modules/imports/import.routes.js";
+
+
 const app = express();
 
 app.use(helmet());
@@ -27,6 +30,8 @@ app.use(
     logger,
   }),
 );
+
+app.use("/api/v1/imports", importRoutes);
 
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
