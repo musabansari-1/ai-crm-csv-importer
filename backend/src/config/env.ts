@@ -8,6 +8,10 @@ const envSchema = z.object({
 
   PORT: z.coerce.number().int().positive().default(5000),
 
+  OPENROUTER_API_KEY: z.string().min(1),
+  
+  AI_MODEL: z.string().min(1),
+
   CLIENT_URL: z.url(),
 });
 
