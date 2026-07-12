@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { DropZone } from '@/components/upload/DropZone'
 import { PreviewStats } from '@/components/preview/PreviewStats'
+import { PreviewTable } from '@/components/preview/PreviewTable'
+import { PreviewSkeleton } from '@/components/preview/PreviewSkeleton'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 
@@ -13,6 +15,10 @@ export default function Home() {
 
   const statsStatus =
     status === 'parsing' || status === 'done' ? status : null
+  const showSkeleton = status === 'parsing' && rows.length === 0
+  const showTable =
+    (status === 'parsing' || status === 'done' || status === 'error') &&
+    !showSkeleton
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -20,31 +26,35 @@ export default function Home() {
         <StepIndicator currentStep="upload" />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-6">
-        <DropZone
-          onFileAccepted={(file) => {
-            console.log('Accepted CSV file:', file.name)
-            setFileSizeBytes(file.size)
-            parseFile(file)
-          }}
-          onError={(message) => {
-            console.error('CSV validation error:', message)
-            setFileSizeBytes(0)
-            reset()
-          }}
-        />
+      <div className="space-y-6">
+        <div className="mx-auto max-w-2xl">
+          <DropZone
+            onFileAccepted={(file) => {
+              console.log('Accepted CSV file:', file.name)
+              setFileSizeBytes(file.size)
+              parseFile(file)
+            }}
+            onError={(message) => {
+              console.error('CSV validation error:', message)
+              setFileSizeBytes(0)
+              reset()
+            }}
+          />
+        </div>
 
         {statsStatus && (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
-            <PreviewStats
-              rowCount={rows.length}
-              columnCount={headers.length}
-              fileSizeBytes={fileSizeBytes}
-              parsedCount={parsedCount}
-              status={statsStatus}
-            />
-          </div>
+          <PreviewStats
+            rowCount={rows.length}
+            columnCount={headers.length}
+            fileSizeBytes={fileSizeBytes}
+            parsedCount={parsedCount}
+            status={statsStatus}
+          />
         )}
+
+        {showSkeleton && <PreviewSkeleton />}
+
+        {showTable && <PreviewTable headers={headers} rows={rows} />}
 
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
