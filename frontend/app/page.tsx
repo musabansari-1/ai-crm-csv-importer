@@ -10,6 +10,7 @@ import { ProgressIndicator } from '@/components/confirm/ProgressIndicator'
 import { ImportErrorCard } from '@/components/confirm/ImportErrorCard'
 import { ResultsTable } from '@/components/results/ResultsTable'
 import { ResultsSummary } from '@/components/results/ResultsSummary'
+import { ExportButton } from '@/components/results/ExportButton'
 import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
@@ -82,6 +83,16 @@ export default function Home() {
     if (!selectedFile) return
     setCurrentStep('importing')
     void startImport(selectedFile)
+  }
+
+  function handleImportAnother() {
+    fadeTo(() => {
+      resetParser()
+      resetImport()
+      setSelectedFile(null)
+      setFileSizeBytes(0)
+      setCurrentStep('upload')
+    })
   }
 
   const statsStatus =
@@ -185,10 +196,8 @@ export default function Home() {
                 <ProgressIndicator attempt={attempt} />
               )}
 
-              {allSkipped && result ? (
-                <AllSkippedWarning skipped={result.skipped} />
-              ) : (
-                <>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
                       Import Results
@@ -200,25 +209,47 @@ export default function Home() {
                     )}
                   </div>
 
-                  <ResultsSummary
-                    imported={
-                      result?.records.length ?? streamingRecords.length
-                    }
-                    skipped={result?.skipped.length ?? 0}
-                    total={
-                      result?.total_processed ??
-                      streamingRecords.length
-                    }
-                    skippedRecords={result?.skipped}
-                  />
+                  {!allSkipped && (
+                    <ResultsSummary
+                      imported={
+                        result?.records.length ?? streamingRecords.length
+                      }
+                      skipped={result?.skipped.length ?? 0}
+                      total={
+                        result?.total_processed ?? streamingRecords.length
+                      }
+                      skippedRecords={result?.skipped}
+                    />
+                  )}
+                </div>
 
-                  <ResultsTable records={displayRecords} />
-                </>
+                <div className="shrink-0">
+                  <ExportButton records={displayRecords} />
+                </div>
+              </div>
+
+              {allSkipped && result ? (
+                <AllSkippedWarning skipped={result.skipped} />
+              ) : (
+                <ResultsTable records={displayRecords} />
               )}
 
               {importStatus === 'error' && importError && (
-                <ImportErrorCard message={importError} onRetry={() => void retry()} />
+                <ImportErrorCard
+                  message={importError}
+                  onRetry={() => void retry()}
+                />
               )}
+
+              <div className="flex justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={handleImportAnother}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  Import Another File
+                </button>
+              </div>
             </>
           )}
         </div>
