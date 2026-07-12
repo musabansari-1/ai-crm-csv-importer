@@ -18,7 +18,8 @@ const fileFilter: multer.Options["fileFilter"] = (_req, file, callback) => {
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    // Match frontend csvValidator max (10 MB)
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter,
 });
