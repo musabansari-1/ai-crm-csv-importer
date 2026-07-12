@@ -68,7 +68,7 @@ export async function importCSV(file: File): Promise<ImportResult> {
   const base = getApiBaseUrl()
   if (!base) return mockImportCSV()
 
-  const response = await fetch(`${base}/api/import`, {
+  const response = await fetch(`${base}/api/v1/imports`, {
     method: 'POST',
     body: toFormData(file),
   })

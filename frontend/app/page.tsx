@@ -6,6 +6,7 @@ import { PreviewStats } from '@/components/preview/PreviewStats'
 import { PreviewTable } from '@/components/preview/PreviewTable'
 import { PreviewSkeleton } from '@/components/preview/PreviewSkeleton'
 import { ConfirmBar } from '@/components/confirm/ConfirmBar'
+import { ProgressIndicator } from '@/components/confirm/ProgressIndicator'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 import { useImport } from '@/hooks/useImport'
@@ -152,15 +153,15 @@ export default function Home() {
               )}
 
               {importStatus === 'loading' && (
-                <p className="animate-pulse text-sm text-blue-600 dark:text-blue-400">
-                  Importing… {streamingRecords.length} records streamed
-                  {attempt > 1 ? ` (attempt ${attempt} of 3)` : ''}
-                </p>
+                <ProgressIndicator attempt={attempt} />
               )}
               {importStatus === 'success' && result && (
                 <p className="text-sm text-green-700 dark:text-green-400">
                   Imported {result.records.length} · skipped{' '}
                   {result.skipped.length}
+                  {streamingRecords.length > 0
+                    ? ` · streamed ${streamingRecords.length}`
+                    : ''}
                 </p>
               )}
             </>
