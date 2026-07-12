@@ -1,5 +1,9 @@
 import type { CRMRecord, ImportResult, SkippedRecord } from '@/types'
 import { MOCK_CRM_RECORDS, MOCK_SKIPPED } from '@/lib/mockImportData'
+import {
+  applyJsonImportResult,
+  parseImportSSE,
+} from '@/lib/sseParser'
 
 export class APIError extends Error {
   statusCode: number
@@ -11,17 +15,25 @@ export class APIError extends Error {
   }
 }
 
+function getApiBaseUrl(): string | undefined {
+  const url = process.env.NEXT_PUBLIC_API_URL
+  if (!url || url.trim() === '') return undefined
+  return url.replace(/\/$/, '')
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
 }
 
-/**
- * Minimal mock implementations for useImport (Step 10).
- * Full JSON + SSE HTTP paths are completed in Step 11.
- */
-export async function importCSV(_file: File): Promise<ImportResult> {
+function toFormData(file: File): FormData {
+  const form = new FormData()
+  form.append('file', file)
+  return form
+}
+
+async function mockImportCSV(): Promise<ImportResult> {
   await delay(3000)
   return {
     records: MOCK_CRM_RECORDS,
@@ -30,33 +42,106 @@ export async function importCSV(_file: File): Promise<ImportResult> {
   }
 }
 
+async function mockImportCSVStream(
+  onBatch: (records: CRMRecord[]) => void,
+  onSkipped: (skipped: SkippedRecord[]) => void,
+  onComplete: (summary: { total_processed: number }) => void
+): Promise<void> {
+  const batches: CRMRecord[][] = [
+    MOCK_CRM_RECORDS.slice(0, 1),
+    MOCK_CRM_RECORDS.slice(1, 3),
+    MOCK_CRM_RECORDS.slice(3, 4),
+  ]
+
+  for (const batch of batches) {
+    await delay(800)
+    onBatch(batch)
+  }
+
+  onSkipped(MOCK_SKIPPED)
+  onComplete({
+    total_processed: MOCK_CRM_RECORDS.length + MOCK_SKIPPED.length,
+  })
+}
+
+export async function importCSV(file: File): Promise<ImportResult> {
+  const base = getApiBaseUrl()
+  if (!base) return mockImportCSV()
+
+  const response = await fetch(`${base}/api/import`, {
+    method: 'POST',
+    body: toFormData(file),
+  })
+
+  if (!response.ok) {
+    throw new APIError(await readErrorMessage(response), response.status)
+  }
+
+  return (await response.json()) as ImportResult
+}
+
 export async function importCSVStream(
-  _file: File,
+  file: File,
   onBatch: (records: CRMRecord[]) => void,
   onSkipped: (skipped: SkippedRecord[]) => void,
   onComplete: (summary: { total_processed: number }) => void,
   onError: (err: Error) => void
 ): Promise<void> {
-  try {
-    // 3 incremental batches, 800ms apart (1–2 records each)
-    const batches: CRMRecord[][] = [
-      MOCK_CRM_RECORDS.slice(0, 1),
-      MOCK_CRM_RECORDS.slice(1, 3),
-      MOCK_CRM_RECORDS.slice(3, 4),
-    ]
+  const base = getApiBaseUrl()
+  const handlers = { onBatch, onSkipped, onComplete }
 
-    for (const batch of batches) {
-      await delay(800)
-      onBatch(batch)
+  if (!base) {
+    try {
+      await mockImportCSVStream(onBatch, onSkipped, onComplete)
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      onError(error)
+      throw error
+    }
+    return
+  }
+
+  try {
+    const response = await fetch(`${base}/api/import/stream`, {
+      method: 'POST',
+      body: toFormData(file),
+    })
+
+    if (!response.ok) {
+      throw new APIError(await readErrorMessage(response), response.status)
     }
 
-    onSkipped(MOCK_SKIPPED)
-    onComplete({
-      total_processed: MOCK_CRM_RECORDS.length + MOCK_SKIPPED.length,
-    })
+    const contentType = response.headers.get('content-type') ?? ''
+
+    // SSE path
+    if (contentType.includes('text/event-stream') && response.body) {
+      await parseImportSSE(response.body, handlers)
+      return
+    }
+
+    // Non-SSE: parse as JSON ImportResult and emit a single batch
+    const result = (await response.json()) as ImportResult
+    applyJsonImportResult(result, handlers)
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err))
     onError(error)
     throw error
   }
+}
+
+async function readErrorMessage(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json()
+    if (
+      body &&
+      typeof body === 'object' &&
+      'message' in body &&
+      typeof (body as { message: unknown }).message === 'string'
+    ) {
+      return (body as { message: string }).message
+    }
+  } catch {
+    // ignore
+  }
+  return `Request failed with status ${response.status}`
 }
