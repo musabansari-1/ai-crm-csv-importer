@@ -1,12 +1,18 @@
 'use client'
 
+import { useState } from 'react'
 import { DropZone } from '@/components/upload/DropZone'
+import { PreviewStats } from '@/components/preview/PreviewStats'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 
 export default function Home() {
   const { status, rows, headers, parsedCount, error, parseFile, reset } =
     useCSVParser()
+  const [fileSizeBytes, setFileSizeBytes] = useState(0)
+
+  const statsStatus =
+    status === 'parsing' || status === 'done' ? status : null
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -18,45 +24,30 @@ export default function Home() {
         <DropZone
           onFileAccepted={(file) => {
             console.log('Accepted CSV file:', file.name)
+            setFileSizeBytes(file.size)
             parseFile(file)
           }}
           onError={(message) => {
             console.error('CSV validation error:', message)
+            setFileSizeBytes(0)
             reset()
           }}
         />
 
-        {/* Temporary parse status panel for Step 6 verification */}
-        {status !== 'idle' && (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-800 dark:bg-gray-900/50">
-            <p className="font-medium text-gray-900 dark:text-gray-100">
-              Parser status:{' '}
-              <span className="font-normal text-gray-600 dark:text-gray-300">
-                {status}
-              </span>
-            </p>
-            <p className="mt-1 text-gray-600 dark:text-gray-400">
-              Rows streamed: {parsedCount} · Columns: {headers.length}
-            </p>
-            {headers.length > 0 && (
-              <p className="mt-1 truncate text-gray-500 dark:text-gray-500">
-                Headers: {headers.join(', ')}
-              </p>
-            )}
-            {status === 'done' && rows.length === 0 && headers.length > 0 && (
-              <p className="mt-2 text-amber-700 dark:text-amber-400">
-                Headers-only CSV — no data rows (status remains done, not error).
-              </p>
-            )}
-            {error && (
-              <p className="mt-2 text-red-600 dark:text-red-400">{error}</p>
-            )}
-            {status === 'parsing' && (
-              <p className="mt-2 animate-pulse text-blue-600 dark:text-blue-400">
-                Streaming rows into state…
-              </p>
-            )}
+        {statsStatus && (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
+            <PreviewStats
+              rowCount={rows.length}
+              columnCount={headers.length}
+              fileSizeBytes={fileSizeBytes}
+              parsedCount={parsedCount}
+              status={statsStatus}
+            />
           </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
       </div>
     </main>
