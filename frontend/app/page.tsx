@@ -11,19 +11,10 @@ import { ImportErrorCard } from '@/components/confirm/ImportErrorCard'
 import { ResultsTable } from '@/components/results/ResultsTable'
 import { ResultsSummary } from '@/components/results/ResultsSummary'
 import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 import { useImport } from '@/hooks/useImport'
-import type { CRMStatus, ImportStep } from '@/types'
-
-const STATUS_REVIEW: Array<CRMStatus | ''> = [
-  'GOOD_LEAD_FOLLOW_UP',
-  'DID_NOT_CONNECT',
-  'BAD_LEAD',
-  'SALE_DONE',
-  '',
-]
+import type { ImportStep } from '@/types'
 
 export default function Home() {
   const {
@@ -125,28 +116,13 @@ export default function Home() {
           }`}
         >
           {currentStep === 'upload' && (
-            <div className="mx-auto max-w-2xl space-y-6">
+            <div className="mx-auto max-w-2xl">
               <DropZone
                 onFileAccepted={handleFileAccepted}
                 onError={(message) => {
                   console.error('CSV validation error:', message)
                 }}
               />
-
-              {/* Temporary StatusBadge prop review (Step 14) */}
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
-                <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  StatusBadge review
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {STATUS_REVIEW.map((status) => (
-                    <StatusBadge
-                      key={status === '' ? 'empty' : status}
-                      status={status}
-                    />
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 

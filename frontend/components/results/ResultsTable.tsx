@@ -2,21 +2,54 @@
 
 import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import type { CRMRecord } from '@/types'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import type { CRMRecord, CRMStatus } from '@/types'
 
 interface ResultsTableProps {
   records: CRMRecord[]
 }
 
 const ROW_HEIGHT = 44
-const COLUMNS: { key: keyof CRMRecord; label: string }[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'email', label: 'Email' },
-  { key: 'mobile_without_country_code', label: 'Mobile' },
-  { key: 'company', label: 'Company' },
-  { key: 'city', label: 'City' },
-  { key: 'crm_status', label: 'CRM Status' },
+const MIN_COL_WIDTH = 120
+const NOTE_MAX = 60
+
+/** Fixed column order for CRM import results */
+const COLUMNS: (keyof CRMRecord)[] = [
+  'name',
+  'email',
+  'mobile_without_country_code',
+  'company',
+  'city',
+  'state',
+  'country',
+  'crm_status',
+  'crm_note',
+  'data_source',
+  'created_at',
+  'lead_owner',
+  'country_code',
+  'possession_time',
+  'description',
 ]
+
+function formatHeader(key: string): string {
+  return key.replace(/_/g, ' ')
+}
+
+function truncateNote(value: string): string {
+  if (value.length <= NOTE_MAX) return value
+  return `${value.slice(0, NOTE_MAX)}…`
+}
+
+function isCRMStatus(value: string): value is CRMStatus | '' {
+  return (
+    value === '' ||
+    value === 'GOOD_LEAD_FOLLOW_UP' ||
+    value === 'DID_NOT_CONNECT' ||
+    value === 'BAD_LEAD' ||
+    value === 'SALE_DONE'
+  )
+}
 
 export function ResultsTable({ records }: ResultsTableProps) {
   const parentRef = useRef<HTMLDivElement>(null)
@@ -38,8 +71,8 @@ export function ResultsTable({ records }: ResultsTableProps) {
     )
   }
 
-  const colTemplate = `repeat(${COLUMNS.length}, minmax(120px, 1fr))`
-  const minWidth = COLUMNS.length * 120
+  const colTemplate = `repeat(${COLUMNS.length}, minmax(${MIN_COL_WIDTH}px, 1fr))`
+  const minWidth = COLUMNS.length * MIN_COL_WIDTH
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
@@ -49,16 +82,17 @@ export function ResultsTable({ records }: ResultsTableProps) {
             className="sticky top-0 z-10 grid border-b border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900"
             style={{ gridTemplateColumns: colTemplate }}
           >
-            {COLUMNS.map((col) => (
+            {COLUMNS.map((key) => (
               <div
-                key={col.key}
-                className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-200"
+                key={key}
+                className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold capitalize tracking-wide text-gray-700 dark:text-gray-200"
               >
-                {col.label}
+                {formatHeader(key)}
               </div>
             ))}
           </div>
 
+          {/* height/transform required by @tanstack/react-virtual */}
           <div
             className="relative w-full"
             style={{ height: rowVirtualizer.getTotalSize() }}
@@ -80,11 +114,36 @@ export function ResultsTable({ records }: ResultsTableProps) {
                     gridTemplateColumns: colTemplate,
                   }}
                 >
-                  {COLUMNS.map((col) => {
-                    const raw = String(record[col.key] ?? '')
+                  {COLUMNS.map((key) => {
+                    const raw = String(record[key] ?? '')
+
+                    if (key === 'crm_status') {
+                      const status = isCRMStatus(raw) ? raw : ''
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center px-3 py-2"
+                        >
+                          <StatusBadge status={status} />
+                        </div>
+                      )
+                    }
+
+                    if (key === 'crm_note') {
+                      return (
+                        <div
+                          key={key}
+                          className="truncate px-3 py-2 text-sm text-gray-800 dark:text-gray-200"
+                          title={raw}
+                        >
+                          {truncateNote(raw) || '—'}
+                        </div>
+                      )
+                    }
+
                     return (
                       <div
-                        key={col.key}
+                        key={key}
                         className="truncate px-3 py-2 text-sm text-gray-800 dark:text-gray-200"
                         title={raw}
                       >
