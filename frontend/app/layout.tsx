@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/Navbar'
-import { ThemeProvider } from '@/components/ui/ThemeProvider'
+import { Providers } from '@/components/ui/Providers'
 import './globals.css'
 
 const inter = Inter({
@@ -22,10 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors">
-        <ThemeProvider>
+        <Providers>
           <Navbar />
           {children}
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

@@ -10,6 +10,7 @@ import {
 interface DropZoneProps {
   onFileAccepted: (file: File) => void
   onError: (message: string) => void
+  onFileRemoved?: () => void
 }
 
 const BASE_SHELL =
@@ -29,7 +30,11 @@ function shellClassName(state: DropZoneVisualState): string {
   return `${BASE_SHELL} ${STATE_SHELL[state]}`
 }
 
-export function DropZone({ onFileAccepted, onError }: DropZoneProps) {
+export function DropZone({
+  onFileAccepted,
+  onError,
+  onFileRemoved,
+}: DropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [visualState, setVisualState] = useState<DropZoneVisualState>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -91,6 +96,7 @@ export function DropZone({ onFileAccepted, onError }: DropZoneProps) {
     setErrorMessage(null)
     setVisualState('idle')
     if (inputRef.current) inputRef.current.value = ''
+    onFileRemoved?.()
   }
 
   return (

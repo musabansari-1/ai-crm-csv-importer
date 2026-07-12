@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DropZone } from '@/components/upload/DropZone'
 import { PreviewStats } from '@/components/preview/PreviewStats'
 import { PreviewTable } from '@/components/preview/PreviewTable'
@@ -15,9 +15,11 @@ import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 import { useImport } from '@/hooks/useImport'
+import { useToast } from '@/hooks/useToast'
 import type { ImportStep } from '@/types'
 
 export default function Home() {
+  const { toast } = useToast()
   const {
     status: parseStatus,
     rows,
@@ -42,6 +44,7 @@ export default function Home() {
   const [fileSizeBytes, setFileSizeBytes] = useState(0)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [visible, setVisible] = useState(true)
+  const prevImportStatus = useRef(importStatus)
 
   // Advance to results as soon as streaming batches arrive (or on success)
   useEffect(() => {
@@ -52,6 +55,20 @@ export default function Home() {
       setCurrentStep('results')
     }
   }, [importStatus, streamingRecords.length])
+
+  // Import outcome toasts — only on status transitions
+  useEffect(() => {
+    const prev = prevImportStatus.current
+    if (prev !== importStatus) {
+      if (importStatus === 'success' && result) {
+        toast(`${result.records.length} leads imported`, 'success')
+      }
+      if (importStatus === 'error' && importError) {
+        toast(`${importError} (attempt ${attempt} of 3)`, 'error')
+      }
+    }
+    prevImportStatus.current = importStatus
+  }, [importStatus, result, importError, attempt, toast])
 
   function fadeTo(next: () => void) {
     setVisible(false)
@@ -70,6 +87,7 @@ export default function Home() {
   }
 
   function handleChangeFile() {
+    toast('File removed', 'info')
     fadeTo(() => {
       resetParser()
       resetImport()
@@ -131,7 +149,10 @@ export default function Home() {
               <DropZone
                 onFileAccepted={handleFileAccepted}
                 onError={(message) => {
-                  console.error('CSV validation error:', message)
+                  toast(message, 'error')
+                }}
+                onFileRemoved={() => {
+                  toast('File removed', 'info')
                 }}
               />
             </div>
