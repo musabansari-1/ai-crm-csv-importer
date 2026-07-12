@@ -7,6 +7,9 @@ import { PreviewTable } from '@/components/preview/PreviewTable'
 import { PreviewSkeleton } from '@/components/preview/PreviewSkeleton'
 import { ConfirmBar } from '@/components/confirm/ConfirmBar'
 import { ProgressIndicator } from '@/components/confirm/ProgressIndicator'
+import { ImportErrorCard } from '@/components/confirm/ImportErrorCard'
+import { ResultsTable } from '@/components/results/ResultsTable'
+import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
 import { useImport } from '@/hooks/useImport'
@@ -30,6 +33,7 @@ export default function Home() {
     attempt,
     startImport,
     reset: resetImport,
+    retry,
   } = useImport()
 
   const [currentStep, setCurrentStep] = useState<ImportStep>('upload')
@@ -37,26 +41,15 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [visible, setVisible] = useState(true)
 
-  // Temporary Step 10 verification: log each streaming batch growth
+  // Advance to results as soon as streaming batches arrive (or on success)
   useEffect(() => {
     if (importStatus === 'loading' && streamingRecords.length > 0) {
-      console.log(
-        `[useImport] batch update — streamingRecords: ${streamingRecords.length}`,
-        streamingRecords.map((r) => r.name)
-      )
+      setCurrentStep('results')
     }
-    if (importStatus === 'success' && result) {
-      console.log('[useImport] success', {
-        records: result.records.length,
-        skipped: result.skipped.length,
-        total_processed: result.total_processed,
-        attempt,
-      })
+    if (importStatus === 'success') {
+      setCurrentStep('results')
     }
-    if (importStatus === 'error') {
-      console.error('[useImport] error', importError, { attempt })
-    }
-  }, [importStatus, streamingRecords, result, importError, attempt])
+  }, [importStatus, streamingRecords.length])
 
   function fadeTo(next: () => void) {
     setVisible(false)
@@ -84,6 +77,12 @@ export default function Home() {
     })
   }
 
+  function handleConfirmImport() {
+    if (!selectedFile) return
+    setCurrentStep('importing')
+    void startImport(selectedFile)
+  }
+
   const statsStatus =
     parseStatus === 'parsing' || parseStatus === 'done' ? parseStatus : null
   const showSkeleton = parseStatus === 'parsing' && rows.length === 0
@@ -92,6 +91,16 @@ export default function Home() {
       parseStatus === 'done' ||
       parseStatus === 'error') &&
     !showSkeleton
+
+  const displayRecords =
+    result?.records ??
+    (streamingRecords.length > 0 ? streamingRecords : [])
+
+  const allSkipped =
+    importStatus === 'success' &&
+    result !== null &&
+    result.records.length === 0 &&
+    result.skipped.length > 0
 
   return (
     <>
@@ -152,32 +161,66 @@ export default function Home() {
                 </p>
               )}
 
+              {importStatus === 'error' && importError && (
+                <ImportErrorCard message={importError} onRetry={() => void retry()} />
+              )}
+            </>
+          )}
+
+          {currentStep === 'importing' && (
+            <div className="mx-auto max-w-xl space-y-4">
               {importStatus === 'loading' && (
                 <ProgressIndicator attempt={attempt} />
               )}
-              {importStatus === 'success' && result && (
-                <p className="text-sm text-green-700 dark:text-green-400">
-                  Imported {result.records.length} · skipped{' '}
-                  {result.skipped.length}
-                  {streamingRecords.length > 0
-                    ? ` · streamed ${streamingRecords.length}`
-                    : ''}
-                </p>
+              {importStatus === 'error' && importError && (
+                <ImportErrorCard message={importError} onRetry={() => void retry()} />
+              )}
+            </div>
+          )}
+
+          {currentStep === 'results' && (
+            <>
+              {importStatus === 'loading' && (
+                <ProgressIndicator attempt={attempt} />
+              )}
+
+              {allSkipped && result ? (
+                <AllSkippedWarning skipped={result.skipped} />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                      Import Results
+                    </h2>
+                    {importStatus === 'loading' && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                        Streaming… {streamingRecords.length} records
+                      </p>
+                    )}
+                    {importStatus === 'success' && result && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {result.records.length} imported · {result.skipped.length}{' '}
+                        skipped
+                      </p>
+                    )}
+                  </div>
+                  <ResultsTable records={displayRecords} />
+                </>
+              )}
+
+              {importStatus === 'error' && importError && (
+                <ImportErrorCard message={importError} onRetry={() => void retry()} />
               )}
             </>
           )}
         </div>
       </main>
 
-      {currentStep === 'preview' && (
+      {currentStep === 'preview' && importStatus !== 'loading' && (
         <ConfirmBar
           rowCount={parseStatus === 'done' ? parsedCount : rows.length}
           status={importStatus}
-          onConfirm={() => {
-            if (selectedFile) {
-              void startImport(selectedFile)
-            }
-          }}
+          onConfirm={handleConfirmImport}
         />
       )}
     </>
