@@ -1,5 +1,6 @@
 import { ApiError } from "../../utils/ApiError.js";
 import { csvParserService } from "../../services/csv-parser.service.js";
+import { crmMappingService } from "../../services/crm-mapping.service.js";
 
 class ImportService {
   async importCsv(file?: Express.Multer.File) {
@@ -13,10 +14,10 @@ class ImportService {
 
     const parsedCsv = await csvParserService.parse(file);
 
+    const response = await crmMappingService.map(parsedCsv);
+
     return {
-      totalRecords: parsedCsv.rows.length,
-      headers: parsedCsv.headers,
-      rows: parsedCsv.rows,
+      response,
     };
   }
 }
