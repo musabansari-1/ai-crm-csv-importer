@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DropZone } from '@/components/upload/DropZone'
 import { PreviewStats } from '@/components/preview/PreviewStats'
 import { PreviewTable } from '@/components/preview/PreviewTable'
@@ -8,15 +8,54 @@ import { PreviewSkeleton } from '@/components/preview/PreviewSkeleton'
 import { ConfirmBar } from '@/components/confirm/ConfirmBar'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { useCSVParser } from '@/hooks/useCSVParser'
+import { useImport } from '@/hooks/useImport'
 import type { ImportStep } from '@/types'
 
 export default function Home() {
-  const { status, rows, headers, parsedCount, error, parseFile, reset } =
-    useCSVParser()
+  const {
+    status: parseStatus,
+    rows,
+    headers,
+    parsedCount,
+    error: parseError,
+    parseFile,
+    reset: resetParser,
+  } = useCSVParser()
+  const {
+    status: importStatus,
+    streamingRecords,
+    result,
+    error: importError,
+    attempt,
+    startImport,
+    reset: resetImport,
+  } = useImport()
+
   const [currentStep, setCurrentStep] = useState<ImportStep>('upload')
   const [fileSizeBytes, setFileSizeBytes] = useState(0)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [visible, setVisible] = useState(true)
+
+  // Temporary Step 10 verification: log each streaming batch growth
+  useEffect(() => {
+    if (importStatus === 'loading' && streamingRecords.length > 0) {
+      console.log(
+        `[useImport] batch update — streamingRecords: ${streamingRecords.length}`,
+        streamingRecords.map((r) => r.name)
+      )
+    }
+    if (importStatus === 'success' && result) {
+      console.log('[useImport] success', {
+        records: result.records.length,
+        skipped: result.skipped.length,
+        total_processed: result.total_processed,
+        attempt,
+      })
+    }
+    if (importStatus === 'error') {
+      console.error('[useImport] error', importError, { attempt })
+    }
+  }, [importStatus, streamingRecords, result, importError, attempt])
 
   function fadeTo(next: () => void) {
     setVisible(false)
@@ -29,13 +68,15 @@ export default function Home() {
   function handleFileAccepted(file: File) {
     setSelectedFile(file)
     setFileSizeBytes(file.size)
+    resetImport()
     parseFile(file)
     fadeTo(() => setCurrentStep('preview'))
   }
 
   function handleChangeFile() {
     fadeTo(() => {
-      reset()
+      resetParser()
+      resetImport()
       setSelectedFile(null)
       setFileSizeBytes(0)
       setCurrentStep('upload')
@@ -43,10 +84,12 @@ export default function Home() {
   }
 
   const statsStatus =
-    status === 'parsing' || status === 'done' ? status : null
-  const showSkeleton = status === 'parsing' && rows.length === 0
+    parseStatus === 'parsing' || parseStatus === 'done' ? parseStatus : null
+  const showSkeleton = parseStatus === 'parsing' && rows.length === 0
   const showTable =
-    (status === 'parsing' || status === 'done' || status === 'error') &&
+    (parseStatus === 'parsing' ||
+      parseStatus === 'done' ||
+      parseStatus === 'error') &&
     !showSkeleton
 
   return (
@@ -102,8 +145,23 @@ export default function Home() {
               {showSkeleton && <PreviewSkeleton />}
               {showTable && <PreviewTable headers={headers} rows={rows} />}
 
-              {error && (
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              {parseError && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {parseError}
+                </p>
+              )}
+
+              {importStatus === 'loading' && (
+                <p className="animate-pulse text-sm text-blue-600 dark:text-blue-400">
+                  Importing… {streamingRecords.length} records streamed
+                  {attempt > 1 ? ` (attempt ${attempt} of 3)` : ''}
+                </p>
+              )}
+              {importStatus === 'success' && result && (
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Imported {result.records.length} · skipped{' '}
+                  {result.skipped.length}
+                </p>
               )}
             </>
           )}
@@ -112,14 +170,12 @@ export default function Home() {
 
       {currentStep === 'preview' && (
         <ConfirmBar
-          rowCount={status === 'done' ? parsedCount : rows.length}
-          status="idle"
+          rowCount={parseStatus === 'done' ? parsedCount : rows.length}
+          status={importStatus}
           onConfirm={() => {
-            // Wired to useImport in Step 10/13
-            console.log('Import Leads clicked', {
-              file: selectedFile?.name,
-              rows: parsedCount,
-            })
+            if (selectedFile) {
+              void startImport(selectedFile)
+            }
           }}
         />
       )}
