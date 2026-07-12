@@ -96,6 +96,18 @@ function dispatchSSEData(
     return
   }
 
+  // Backend may emit event: error with { message }
+  if (type === 'error') {
+    const message =
+      data &&
+      typeof data === 'object' &&
+      'message' in data &&
+      typeof (data as { message: unknown }).message === 'string'
+        ? (data as { message: string }).message
+        : 'Import stream failed'
+    throw new Error(message)
+  }
+
   // Bare ImportResult JSON inside a data line
   if (isImportResult(data)) {
     handlers.onBatch(data.records)

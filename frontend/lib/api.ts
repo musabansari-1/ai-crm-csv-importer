@@ -33,6 +33,10 @@ function toFormData(file: File): FormData {
   return form
 }
 
+/** Backend paths (Express mounts imports at /api/v1/imports). */
+const IMPORT_PATH = '/api/v1/imports'
+const IMPORT_STREAM_PATH = '/api/v1/imports/stream'
+
 async function mockImportCSV(): Promise<ImportResult> {
   await delay(3000)
   return {
@@ -64,11 +68,51 @@ async function mockImportCSVStream(
   })
 }
 
+/**
+ * Accept flat ImportResult or legacy `{ success, data }` wrapper.
+ */
+function coerceImportResult(body: unknown): ImportResult {
+  if (!body || typeof body !== 'object') {
+    throw new APIError('Invalid import response', 502)
+  }
+
+  const obj = body as Record<string, unknown>
+
+  // { success: true, data: ImportResult }
+  if (
+    'data' in obj &&
+    obj.data &&
+    typeof obj.data === 'object' &&
+    Array.isArray((obj.data as ImportResult).records)
+  ) {
+    return finalizeResult(obj.data as Partial<ImportResult>)
+  }
+
+  if (Array.isArray(obj.records)) {
+    return finalizeResult(obj as Partial<ImportResult>)
+  }
+
+  throw new APIError('Invalid import response shape', 502)
+}
+
+function finalizeResult(partial: Partial<ImportResult>): ImportResult {
+  const records = partial.records ?? []
+  const skipped = partial.skipped ?? []
+  return {
+    records,
+    skipped,
+    total_processed:
+      typeof partial.total_processed === 'number'
+        ? partial.total_processed
+        : records.length + skipped.length,
+  }
+}
+
 export async function importCSV(file: File): Promise<ImportResult> {
   const base = getApiBaseUrl()
   if (!base) return mockImportCSV()
 
-  const response = await fetch(`${base}/api/v1/imports`, {
+  const response = await fetch(`${base}${IMPORT_PATH}`, {
     method: 'POST',
     body: toFormData(file),
   })
@@ -77,7 +121,8 @@ export async function importCSV(file: File): Promise<ImportResult> {
     throw new APIError(await readErrorMessage(response), response.status)
   }
 
-  return (await response.json()) as ImportResult
+  const body: unknown = await response.json()
+  return coerceImportResult(body)
 }
 
 export async function importCSVStream(
@@ -102,7 +147,7 @@ export async function importCSVStream(
   }
 
   try {
-    const response = await fetch(`${base}/api/import/stream`, {
+    const response = await fetch(`${base}${IMPORT_STREAM_PATH}`, {
       method: 'POST',
       body: toFormData(file),
     })
@@ -113,15 +158,14 @@ export async function importCSVStream(
 
     const contentType = response.headers.get('content-type') ?? ''
 
-    // SSE path
     if (contentType.includes('text/event-stream') && response.body) {
       await parseImportSSE(response.body, handlers)
       return
     }
 
-    // Non-SSE: parse as JSON ImportResult and emit a single batch
-    const result = (await response.json()) as ImportResult
-    applyJsonImportResult(result, handlers)
+    // Non-SSE JSON fallback (same shape as POST /api/v1/imports)
+    const body: unknown = await response.json()
+    applyJsonImportResult(coerceImportResult(body), handlers)
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err))
     onError(error)
