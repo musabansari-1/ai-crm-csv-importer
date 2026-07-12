@@ -49,17 +49,25 @@ export function PreviewTable({ headers, rows }: PreviewTableProps) {
   const minTableWidth = headers.length * MIN_COL_WIDTH
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       {/* Single scrollport for virtualizer (x + y) */}
-      <div ref={parentRef} className="max-h-[28rem] overflow-auto">
+      <div
+        ref={parentRef}
+        className="max-h-[28rem] overflow-auto"
+        role="table"
+        aria-label="CSV preview"
+        aria-rowcount={rows.length + 1}
+      >
         <div style={{ minWidth: minTableWidth }}>
           <div
+            role="row"
             className="sticky top-0 z-10 grid border-b border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900"
             style={{ gridTemplateColumns: colTemplate }}
           >
             {headers.map((header) => (
               <div
                 key={header}
+                role="columnheader"
                 className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-200"
                 title={header}
               >
@@ -83,6 +91,8 @@ export function PreviewTable({ headers, rows }: PreviewTableProps) {
               return (
                 <div
                   key={virtualRow.key}
+                  role="row"
+                  aria-rowindex={virtualRow.index + 2}
                   className={`absolute left-0 top-0 grid w-full border-b border-gray-100 dark:border-gray-800/80 ${stripe}`}
                   style={{
                     height: virtualRow.size,
@@ -95,6 +105,7 @@ export function PreviewTable({ headers, rows }: PreviewTableProps) {
                     return (
                       <div
                         key={header}
+                        role="cell"
                         className="truncate px-3 py-2 text-sm text-gray-800 dark:text-gray-200"
                         title={raw}
                       >

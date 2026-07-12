@@ -31,7 +31,10 @@ const STATUS_CONFIG: Record<
 export function StatusBadge({ status }: StatusBadgeProps) {
   if (status === '') {
     return (
-      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+      <span
+        aria-label="Status: none"
+        className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+      >
         —
       </span>
     )
@@ -41,6 +44,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <span
+      aria-label={`Status: ${config.label}`}
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}
     >
       {config.label}

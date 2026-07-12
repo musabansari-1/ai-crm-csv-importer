@@ -137,7 +137,7 @@ export default function Home() {
 
   return (
     <>
-      <main className="mx-auto max-w-6xl px-4 py-8 pb-28 sm:px-6">
+      <main className="mx-auto min-w-0 max-w-6xl overflow-x-hidden px-3 py-8 pb-28 sm:px-6">
         <div className="mb-10">
           <StepIndicator currentStep={currentStep} />
         </div>
@@ -167,6 +167,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleChangeFile}
+                  aria-label="Change file and return to upload"
                   className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   ← Change File
@@ -271,7 +272,8 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleImportAnother}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                  aria-label="Import another file"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 sm:w-auto"
                 >
                   Import Another File
                 </button>

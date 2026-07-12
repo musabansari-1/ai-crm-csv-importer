@@ -103,7 +103,7 @@ export function DropZone({
     <div
       role="button"
       tabIndex={0}
-      aria-label="CSV upload dropzone"
+      aria-label="Upload CSV file — drag and drop or press Enter to browse"
       className={shellClassName(visualState)}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
@@ -122,8 +122,10 @@ export function DropZone({
       <input
         ref={inputRef}
         type="file"
-        accept=".csv"
-        className="hidden"
+        accept=".csv,text/csv"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
         onChange={handleInputChange}
       />
       <DropZoneContent

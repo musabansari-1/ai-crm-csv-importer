@@ -99,6 +99,10 @@ export function ResultsSummary({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={
+              open ? 'Hide skipped records' : 'View skipped records'
+            }
             className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-100 dark:hover:bg-gray-800/50"
           >
             {open ? (

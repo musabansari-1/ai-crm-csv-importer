@@ -75,16 +75,24 @@ export function ResultsTable({ records }: ResultsTableProps) {
   const minWidth = COLUMNS.length * MIN_COL_WIDTH
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-      <div ref={parentRef} className="max-h-[28rem] overflow-auto">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+      <div
+        ref={parentRef}
+        className="max-h-[28rem] overflow-auto"
+        role="table"
+        aria-label="Imported CRM records"
+        aria-rowcount={records.length + 1}
+      >
         <div style={{ minWidth }}>
           <div
+            role="row"
             className="sticky top-0 z-10 grid border-b border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900"
             style={{ gridTemplateColumns: colTemplate }}
           >
             {COLUMNS.map((key) => (
               <div
                 key={key}
+                role="columnheader"
                 className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold capitalize tracking-wide text-gray-700 dark:text-gray-200"
               >
                 {formatHeader(key)}
@@ -107,6 +115,8 @@ export function ResultsTable({ records }: ResultsTableProps) {
               return (
                 <div
                   key={virtualRow.key}
+                  role="row"
+                  aria-rowindex={virtualRow.index + 2}
                   className={`absolute left-0 top-0 grid w-full border-b border-gray-100 dark:border-gray-800/80 ${stripe}`}
                   style={{
                     height: virtualRow.size,
@@ -122,6 +132,7 @@ export function ResultsTable({ records }: ResultsTableProps) {
                       return (
                         <div
                           key={key}
+                          role="cell"
                           className="flex items-center px-3 py-2"
                         >
                           <StatusBadge status={status} />
@@ -133,6 +144,7 @@ export function ResultsTable({ records }: ResultsTableProps) {
                       return (
                         <div
                           key={key}
+                          role="cell"
                           className="truncate px-3 py-2 text-sm text-gray-800 dark:text-gray-200"
                           title={raw}
                         >
@@ -144,6 +156,7 @@ export function ResultsTable({ records }: ResultsTableProps) {
                     return (
                       <div
                         key={key}
+                        role="cell"
                         className="truncate px-3 py-2 text-sm text-gray-800 dark:text-gray-200"
                         title={raw}
                       >

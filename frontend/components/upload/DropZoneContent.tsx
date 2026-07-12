@@ -69,6 +69,7 @@ export function DropZoneContent({
             e.stopPropagation()
             onRemove()
           }}
+          aria-label="Remove selected file"
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           <X className="h-4 w-4" aria-hidden />

@@ -30,6 +30,13 @@ export function ConfirmBar({ rowCount, status, onConfirm }: ConfirmBarProps) {
             onClick={onConfirm}
             disabled={disabled}
             aria-disabled={disabled}
+            aria-label={
+              noRows
+                ? 'Import leads unavailable — no data rows to import'
+                : isLoading
+                  ? 'Importing leads'
+                  : `Import ${rowCount} leads`
+            }
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600 sm:w-auto"
           >
             {isLoading && (
