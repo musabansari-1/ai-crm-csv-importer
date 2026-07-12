@@ -11,11 +11,12 @@ class ImportService {
       throw new ApiError(400, "Uploaded CSV file is empty.");
     }
 
-    const records = await csvParserService.parse(file);
+    const parsedCsv = await csvParserService.parse(file);
 
     return {
-      totalRecords: records.length,
-      records,
+      totalRecords: parsedCsv.rows.length,
+      headers: parsedCsv.headers,
+      rows: parsedCsv.rows,
     };
   }
 }
