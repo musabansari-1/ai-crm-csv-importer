@@ -1,18 +1,28 @@
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { ThemeProvider } from '@/components/ui/ThemeProvider'
+import './globals.css'
 
-export const metadata = {
-  title: "AI-Powered CSV Importer",
-  description: "Upload any CSV file and intelligently map lead data into a standardized CRM format using AI.",
-};
+const inter = Inter({
+  subsets: ['latin'],
+})
+
+export const metadata: Metadata = {
+  title: 'GrowEasy CSV Importer',
+  description:
+    'Upload any CSV and let AI intelligently map your leads into GrowEasy CRM format.',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={inter.className} suppressHydrationWarning>
+      <body className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
-  );
+  )
 }
