@@ -10,6 +10,7 @@ import { ProgressIndicator } from '@/components/confirm/ProgressIndicator'
 import { ImportErrorCard } from '@/components/confirm/ImportErrorCard'
 import { ResultsTable } from '@/components/results/ResultsTable'
 import { ResultsSummary } from '@/components/results/ResultsSummary'
+import { ResultsSkeleton } from '@/components/results/ResultsSkeleton'
 import { ExportButton } from '@/components/results/ExportButton'
 import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
 import { StepIndicator } from '@/components/ui/StepIndicator'
@@ -115,12 +116,14 @@ export default function Home() {
 
   const statsStatus =
     parseStatus === 'parsing' || parseStatus === 'done' ? parseStatus : null
-  const showSkeleton = parseStatus === 'parsing' && rows.length === 0
+  const showSkeleton = parseStatus === 'parsing' && parsedCount === 0
   const showTable =
     (parseStatus === 'parsing' ||
       parseStatus === 'done' ||
       parseStatus === 'error') &&
     !showSkeleton
+  const showResultsSkeleton =
+    importStatus === 'loading' && streamingRecords.length === 0
 
   const displayRecords =
     result?.records ??
@@ -251,6 +254,8 @@ export default function Home() {
 
               {allSkipped && result ? (
                 <AllSkippedWarning skipped={result.skipped} />
+              ) : showResultsSkeleton ? (
+                <ResultsSkeleton />
               ) : (
                 <ResultsTable records={displayRecords} />
               )}

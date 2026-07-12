@@ -1,18 +1,17 @@
 import { Skeleton } from '@/components/ui/Skeleton'
 
-interface PreviewSkeletonProps {
-  columnCount?: number
-}
+const COLUMN_COUNT = 8
+const ROW_COUNT = 5
 
-export function PreviewSkeleton({ columnCount = 6 }: PreviewSkeletonProps) {
-  const columns = Array.from({ length: columnCount }, (_, i) => i)
-  const rows = Array.from({ length: 5 }, (_, i) => i)
+export function ResultsSkeleton() {
+  const columns = Array.from({ length: COLUMN_COUNT }, (_, i) => i)
+  const rows = Array.from({ length: ROW_COUNT }, (_, i) => i)
 
   return (
     <div
       className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800"
       aria-busy="true"
-      aria-label="Loading CSV preview"
+      aria-label="Loading import results"
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-full border-collapse">
@@ -20,7 +19,7 @@ export function PreviewSkeleton({ columnCount = 6 }: PreviewSkeletonProps) {
             <tr className="border-b border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900">
               {columns.map((col) => (
                 <th key={col} className="min-w-[120px] px-3 py-2 text-left">
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
                 </th>
               ))}
             </tr>
@@ -37,7 +36,7 @@ export function PreviewSkeleton({ columnCount = 6 }: PreviewSkeletonProps) {
               >
                 {columns.map((col) => (
                   <td key={col} className="min-w-[120px] px-3 py-2.5">
-                    <Skeleton className="h-4 w-full max-w-[8rem]" />
+                    <Skeleton className="h-4 w-full max-w-[7rem]" />
                   </td>
                 ))}
               </tr>
