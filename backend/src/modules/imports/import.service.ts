@@ -14,11 +14,9 @@ class ImportService {
 
     const parsedCsv = await csvParserService.parse(file);
 
-    const response = await crmMappingService.map(parsedCsv);
+    const result = await crmMappingService.map(parsedCsv);
 
-    return {
-      response,
-    };
+    return result;
   }
 }
 

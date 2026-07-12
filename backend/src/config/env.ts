@@ -12,6 +12,8 @@ const envSchema = z.object({
   
   AI_MODEL: z.string().min(1),
 
+  AI_BATCH_SIZE: z.coerce.number().default(30),
+
   CLIENT_URL: z.url(),
 });
 
