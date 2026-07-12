@@ -9,6 +9,7 @@ import { ConfirmBar } from '@/components/confirm/ConfirmBar'
 import { ProgressIndicator } from '@/components/confirm/ProgressIndicator'
 import { ImportErrorCard } from '@/components/confirm/ImportErrorCard'
 import { ResultsTable } from '@/components/results/ResultsTable'
+import { ResultsSummary } from '@/components/results/ResultsSummary'
 import { AllSkippedWarning } from '@/components/results/AllSkippedWarning'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { StepIndicator } from '@/components/ui/StepIndicator'
@@ -212,7 +213,7 @@ export default function Home() {
                 <AllSkippedWarning skipped={result.skipped} />
               ) : (
                 <>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
                       Import Results
                     </h2>
@@ -221,13 +222,20 @@ export default function Home() {
                         Streaming… {streamingRecords.length} records
                       </p>
                     )}
-                    {importStatus === 'success' && result && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {result.records.length} imported · {result.skipped.length}{' '}
-                        skipped
-                      </p>
-                    )}
                   </div>
+
+                  <ResultsSummary
+                    imported={
+                      result?.records.length ?? streamingRecords.length
+                    }
+                    skipped={result?.skipped.length ?? 0}
+                    total={
+                      result?.total_processed ??
+                      streamingRecords.length
+                    }
+                    skippedRecords={result?.skipped}
+                  />
+
                   <ResultsTable records={displayRecords} />
                 </>
               )}
